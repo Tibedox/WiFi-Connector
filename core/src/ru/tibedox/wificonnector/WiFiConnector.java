@@ -210,7 +210,8 @@ public class WiFiConnector extends ApplicationAdapter {
 		client = new Client();
 		client.start();
 		try {
-			client.connect(5000, ipAddressOfServer, 54555, 54777); // указываем IP-адрес и порты TCP и UDP сервера
+			// указываем IP-адрес и порты TCP и UDP сервера
+			client.connect(5000, ipAddressOfServer, 54555, 54777);
 		} catch (IOException e) {
 			//throw new RuntimeException(e);
 			return false;
