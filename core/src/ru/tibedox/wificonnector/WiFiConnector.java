@@ -30,23 +30,24 @@ public class WiFiConnector extends ApplicationAdapter {
 	Vector3 touch;
 	BitmapFont font;
 	InputKeyboard keyboard;
+	boolean isEnterIP;
 
 	Texture imgBackGround;
+	Texture imgRed;
+	Texture imgBlue;
 
 	TextButton btnCreateServer;
 	TextButton btnCreateClient;
-	TextButton btnSendData;
 	TextButton btnExit;
 
 	private InetAddress ipAddress;
-	private String myIpAddress = "?";
+	private String ipAddressOfServer = "?";
 	Server server;
 	Client client;
-	boolean isServerStarted;
-	boolean isClientStarted;
-	String receive, send;
-	Request request;
-	Response response;
+	boolean isServer;
+	boolean isClient;
+	Request requestRedClient;
+	Response responseBlueServer;
 
 	@Override
 	public void create () {
@@ -55,77 +56,82 @@ public class WiFiConnector extends ApplicationAdapter {
 		camera.setToOrtho(false, SCR_WIDTH, SCR_HEIGHT);
 		touch = new Vector3();
 		createFont();
-		keyboard = new InputKeyboard(SCR_WIDTH, SCR_HEIGHT, 10);
+		keyboard = new InputKeyboard(SCR_WIDTH, SCR_HEIGHT, 15);
 
-		imgBackGround = new Texture("swamp2.jpg");
-		btnCreateServer = new TextButton(font, "Create Server", 50, 600);
-		btnCreateClient = new TextButton(font, "Create Client", 50, 400);
-		btnSendData = new TextButton(font, "Send Data", 50, 300);
-		btnExit = new TextButton(font, "Exit", 50, 200);
+		imgBackGround = new Texture("swamp.jpg");
+		imgRed = new Texture("circlered.png");
+		imgBlue = new Texture("circleblue.png");
 
-		request = new Request();
-		response = new Response();
+		btnCreateServer = new TextButton(font, "Create Server", 100, 600);
+		btnCreateClient = new TextButton(font, "Create Client", 100, 400);
+		btnExit = new TextButton(font, "Exit", 100, 100);
+
+		requestRedClient = new Request();
+		responseBlueServer = new Response();
 	}
 
 	@Override
 	public void render() {
 		// касания экрана
-		if(Gdx.input.isTouched()){
+		if(Gdx.input.justTouched()){
 			touch.set(Gdx.input.getX(), Gdx.input.getY(), 0);
 			camera.unproject(touch);
-			if(btnCreateServer.hit(touch.x, touch.y)) {
-				if(!isServerStarted) {
-					startServer();
-					myIpAddress = detectIP();
+
+			if(btnCreateServer.hit(touch.x, touch.y) && !isServer && !isClient && !isEnterIP) {
+				startServer();
+				ipAddressOfServer = detectIP();
+			}
+			if(btnCreateClient.hit(touch.x, touch.y) && !isServer && !isClient && !isEnterIP){
+				isEnterIP = true;
+			}
+			if(isEnterIP && keyboard.endOfEdit(touch.x, touch.y)) {
+				isEnterIP = false;
+				ipAddressOfServer = keyboard.getText();
+				if(!startClient()){
+					isClient = false;
+					ipAddressOfServer = "Server not found";
 				}
 			}
-			if(btnCreateClient.hit(touch.x, touch.y)){
-				if(!isClientStarted) {
-					startClient();
-					myIpAddress = "192.168.1.139";
-				}
-			}
-			if(btnSendData.hit(touch.x, touch.y)){
-				if(isClientStarted) {
-					Request request = new Request();
-					request.text = "xy: ";
-					request.x = touch.x;
-					request.y = touch.y;
-					client.sendTCP(request);
-					send = request.text + request.x + " " + request.y;
-				}
-			}
-			if(btnExit.hit(touch.x, touch.y)){
+			if(btnExit.hit(touch.x, touch.y) && !isEnterIP){
 				Gdx.app.exit();
 			}
 		}
+		if(Gdx.input.isTouched() && !isEnterIP) {
+			touch.set(Gdx.input.getX(), Gdx.input.getY(), 0);
+			camera.unproject(touch);
+		}
 
 		// события игры
-		if(isClientStarted){
-			request.text = "cl: ";
-			request.x = touch.x;
-			request.y = touch.y;
-			client.sendTCP(request);
+		if(isClient){
+			requestRedClient.text = "red: ";
+			requestRedClient.x = touch.x;
+			requestRedClient.y = touch.y;
+			client.sendTCP(requestRedClient);
 		}
-		if(isServerStarted){
-			response.text = "se: ";
-			response.x = touch.x;
-			response.y = touch.y;
+		if(isServer){
+			responseBlueServer.text = "blue: ";
+			responseBlueServer.x = touch.x;
+			responseBlueServer.y = touch.y;
 		}
-
 
 		// вывод изображений
 		camera.update();
 		batch.setProjectionMatrix(camera.combined);
 		batch.begin();
 		batch.draw(imgBackGround, 0, 0, SCR_WIDTH, SCR_HEIGHT);
+		batch.draw(imgRed, requestRedClient.x-50, requestRedClient.y-50, 100, 100);
+		batch.draw(imgBlue, responseBlueServer.x-50, responseBlueServer.y-50, 100, 100);
+		font.draw(batch, "Server "+ responseBlueServer.text+ (int)responseBlueServer.x+" "+ (int)responseBlueServer.y, 100, 300);
+		font.draw(batch, "Client "+ requestRedClient.text+ (int)requestRedClient.x+" "+ (int)requestRedClient.y, 100, 200);
+
 		btnCreateServer.font.draw(batch, btnCreateServer.text, btnCreateServer.x, btnCreateServer.y);
-		font.draw(batch, "Server's IP: "+myIpAddress, btnCreateServer.x, btnCreateServer.y-100);
+		font.draw(batch, "Server's IP: "+ ipAddressOfServer, btnCreateServer.x, btnCreateServer.y-100);
 		btnCreateClient.font.draw(batch, btnCreateClient.text, btnCreateClient.x, btnCreateClient.y);
-		btnSendData.font.draw(batch, btnSendData.text, btnSendData.x, btnSendData.y);
 		btnExit.font.draw(batch, btnExit.text, btnExit.x, btnExit.y);
-		font.draw(batch, "Принято: "+response.text+response.x+" "+response.y, 500, 450);
-		font.draw(batch, "Отправлено: "+request.text+request.x+" "+request.y, 500, 350);
+		if(isEnterIP) {
+			keyboard.draw(batch);
+		}
+
 		batch.end();
 	}
 
@@ -146,6 +152,8 @@ public class WiFiConnector extends ApplicationAdapter {
 		keyboard.dispose();
 		font.dispose();
 		imgBackGround.dispose();
+		imgRed.dispose();
+		imgBlue.dispose();
 	}
 
 	public String detectIP() {
@@ -158,7 +166,7 @@ public class WiFiConnector extends ApplicationAdapter {
 					InetAddress address = addresses.nextElement();
 					if (!address.isLinkLocalAddress() && !address.isLoopbackAddress() && address.getHostAddress().indexOf(":") == -1) {
 						ipAddress = address;
-						System.out.println("IP-адрес устройства: " + ipAddress.getHostAddress());
+						//System.out.println("IP-адрес устройства: " + ipAddress.getHostAddress());
 					}
 				}
 			}
@@ -169,7 +177,6 @@ public class WiFiConnector extends ApplicationAdapter {
 		if(ipAddress != null){
 			return ipAddress.getHostAddress();
 		}
-
 		return "";
 	}
 
@@ -190,22 +197,23 @@ public class WiFiConnector extends ApplicationAdapter {
 		server.addListener(new Listener() {
 			public void received (Connection connection, Object object) {
 				if (object instanceof Request) {
-					request = (Request)object;
-					connection.sendTCP(response);
+					requestRedClient = (Request)object;
+					connection.sendTCP(responseBlueServer);
 				}
 			}
 		});
-		isServerStarted = true;
+		isServer = true;
+		isClient = false;
 	}
 
-	void startClient(){
-
+	boolean startClient(){
 		client = new Client();
 		client.start();
 		try {
-			client.connect(5000, "192.168.1.139", 54555, 54777); // указываем IP-адрес и порты сервера
+			client.connect(5000, ipAddressOfServer, 54555, 54777); // указываем IP-адрес и порты TCP и UDP сервера
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			//throw new RuntimeException(e);
+			return false;
 		}
 
 		Kryo kryoClient = client.getKryo();
@@ -215,20 +223,22 @@ public class WiFiConnector extends ApplicationAdapter {
 		client.addListener(new Listener() {
 			public void received (Connection connection, Object object) {
 				if (object instanceof Response) {
-					response = (Response)object;
+					responseBlueServer = (Response)object;
 				}
 			}
 		});
-		isClientStarted = true;
+		isClient = true;
+		isServer = false;
+		return true;
 	}
 }
 
 class Request {
-	public String text;
+	public String text = "";
 	public float x, y;
 }
 
 class Response {
-	public String text;
+	public String text = "";
 	public float x, y;
 }

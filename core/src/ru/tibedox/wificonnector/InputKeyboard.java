@@ -25,10 +25,10 @@ public class InputKeyboard {
     private BitmapFont font;
 
     private String text = ""; // вводимый текст
-    private static final String LETTERS_EN_CAPS = "1234567890-~QWERTYUIOP+?^ASDFGHJKL;'`ZXCVBNM<> |";
-    private static final String LETTERS_EN_LOW  = "!@#$%:&*()_~qwertyuiop[]^asdfghjkl:'`zxcvbnm,. |";
+    private static final String LETTERS_EN_CAPS = "1234567890-~QWERTYUIOP+?^ASDFGHJKL;'`ZXCVBNM,. |";
+    private static final String LETTERS_EN_LOW  = "1234567890_~qwertyuiop[]^asdfghjkl:'`zxcvbnm,. |";
     private static final String LETTERS_RU_CAPS = "1234567890-~ЙЦУКЕНГШЩЗХЪ^ФЫВАПРОЛДЖЭ`ЯЧСМИТЬБЮЁ|";
-    private static final String LETTERS_RU_LOW  = "!@#$%:&*()_~йцукенгшщзхъ^фывапролджэ`ячсмитьбюё|";
+    private static final String LETTERS_RU_LOW  = "1234567890_~йцукенгшщзхъ^фывапролджэ`ячсмитьбюё|";
     private String letters = LETTERS_EN_CAPS;
 
     private final Texture imgAtlasKeys; // все изображения кнопок
