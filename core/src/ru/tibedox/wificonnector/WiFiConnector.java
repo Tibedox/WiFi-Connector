@@ -45,8 +45,8 @@ public class WiFiConnector extends ApplicationAdapter {
 	boolean isServerStarted;
 	boolean isClientStarted;
 	String receive, send;
-	//SampleRequest request;
-	//SampleResponse response;
+	Request request;
+	Response response;
 
 	@Override
 	public void create () {
@@ -63,14 +63,14 @@ public class WiFiConnector extends ApplicationAdapter {
 		btnSendData = new TextButton(font, "Send Data", 50, 300);
 		btnExit = new TextButton(font, "Exit", 50, 200);
 
-		//request = new SampleRequest();
-		//response = new SampleResponse();
+		request = new Request();
+		response = new Response();
 	}
 
 	@Override
 	public void render() {
 		// касания экрана
-		if(Gdx.input.justTouched()){
+		if(Gdx.input.isTouched()){
 			touch.set(Gdx.input.getX(), Gdx.input.getY(), 0);
 			camera.unproject(touch);
 			if(btnCreateServer.hit(touch.x, touch.y)) {
@@ -87,7 +87,7 @@ public class WiFiConnector extends ApplicationAdapter {
 			}
 			if(btnSendData.hit(touch.x, touch.y)){
 				if(isClientStarted) {
-					SampleRequest request = new SampleRequest();
+					Request request = new Request();
 					request.text = "xy: ";
 					request.x = touch.x;
 					request.y = touch.y;
@@ -101,6 +101,17 @@ public class WiFiConnector extends ApplicationAdapter {
 		}
 
 		// события игры
+		if(isClientStarted){
+			request.text = "cl: ";
+			request.x = touch.x;
+			request.y = touch.y;
+			client.sendTCP(request);
+		}
+		if(isServerStarted){
+			response.text = "se: ";
+			response.x = touch.x;
+			response.y = touch.y;
+		}
 
 
 		// вывод изображений
@@ -113,8 +124,8 @@ public class WiFiConnector extends ApplicationAdapter {
 		btnCreateClient.font.draw(batch, btnCreateClient.text, btnCreateClient.x, btnCreateClient.y);
 		btnSendData.font.draw(batch, btnSendData.text, btnSendData.x, btnSendData.y);
 		btnExit.font.draw(batch, btnExit.text, btnExit.x, btnExit.y);
-		font.draw(batch, "Принято: "+receive, 500, 450);
-		font.draw(batch, "Отправлено: "+send, 500, 350);
+		font.draw(batch, "Принято: "+response.text+response.x+" "+response.y, 500, 450);
+		font.draw(batch, "Отправлено: "+request.text+request.x+" "+request.y, 500, 350);
 		batch.end();
 	}
 
@@ -173,19 +184,13 @@ public class WiFiConnector extends ApplicationAdapter {
 		}
 
 		Kryo kryo = server.getKryo();
-		kryo.register(SampleRequest.class);
-		kryo.register(SampleResponse.class);
+		kryo.register(Request.class);
+		kryo.register(Response.class);
 
 		server.addListener(new Listener() {
 			public void received (Connection connection, Object object) {
-				if (object instanceof SampleRequest) {
-					SampleRequest request = (SampleRequest)object;
-					//System.out.println(request.text);
-					receive = request.text + request.x + " " + request.y;
-
-					SampleResponse response = new SampleResponse();
-					//System.out.println(response.text);
-					response.text += 1;
+				if (object instanceof Request) {
+					request = (Request)object;
 					connection.sendTCP(response);
 				}
 			}
@@ -204,19 +209,13 @@ public class WiFiConnector extends ApplicationAdapter {
 		}
 
 		Kryo kryoClient = client.getKryo();
-		kryoClient.register(SampleRequest.class);
-		kryoClient.register(SampleResponse.class);
-
-		/*SampleRequest request = new SampleRequest();
-		request.text = "запрос";
-		client.sendTCP(request);*/
+		kryoClient.register(Request.class);
+		kryoClient.register(Response.class);
 
 		client.addListener(new Listener() {
 			public void received (Connection connection, Object object) {
-				if (object instanceof SampleResponse) {
-					SampleResponse response = (SampleResponse)object;
-					System.out.println(response.text);
-					receive = response.text;
+				if (object instanceof Response) {
+					response = (Response)object;
 				}
 			}
 		});
@@ -224,12 +223,12 @@ public class WiFiConnector extends ApplicationAdapter {
 	}
 }
 
-class SampleRequest {
+class Request {
 	public String text;
 	public float x, y;
 }
 
-class SampleResponse {
+class Response {
 	public String text;
 	public float x, y;
 }
