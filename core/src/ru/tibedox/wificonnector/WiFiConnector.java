@@ -45,8 +45,8 @@ public class WiFiConnector extends ApplicationAdapter {
 	boolean isServerStarted;
 	boolean isClientStarted;
 	String receive, send;
-	SampleRequest request;
-	SampleResponse response;
+	//SampleRequest request;
+	//SampleResponse response;
 
 	@Override
 	public void create () {
@@ -63,6 +63,8 @@ public class WiFiConnector extends ApplicationAdapter {
 		btnSendData = new TextButton(font, "Send Data", 50, 300);
 		btnExit = new TextButton(font, "Exit", 50, 200);
 
+		//request = new SampleRequest();
+		//response = new SampleResponse();
 	}
 
 	@Override
@@ -75,20 +77,23 @@ public class WiFiConnector extends ApplicationAdapter {
 				if(!isServerStarted) {
 					startServer();
 					myIpAddress = detectIP();
-					System.out.println("Server started");
 				}
 			}
 			if(btnCreateClient.hit(touch.x, touch.y)){
 				if(!isClientStarted) {
 					startClient();
 					myIpAddress = "192.168.1.139";
-					System.out.println("Client started");
 				}
 			}
 			if(btnSendData.hit(touch.x, touch.y)){
-				SampleRequest request = new SampleRequest();
-				request.text = "запрос";
-				client.sendTCP(request);
+				if(isClientStarted) {
+					SampleRequest request = new SampleRequest();
+					request.text = "xy: ";
+					request.x = touch.x;
+					request.y = touch.y;
+					client.sendTCP(request);
+					send = request.text + request.x + " " + request.y;
+				}
 			}
 			if(btnExit.hit(touch.x, touch.y)){
 				Gdx.app.exit();
@@ -176,8 +181,7 @@ public class WiFiConnector extends ApplicationAdapter {
 				if (object instanceof SampleRequest) {
 					SampleRequest request = (SampleRequest)object;
 					//System.out.println(request.text);
-					request.text += 1;
-					receive = request.text;
+					receive = request.text + request.x + " " + request.y;
 
 					SampleResponse response = new SampleResponse();
 					//System.out.println(response.text);
@@ -190,6 +194,7 @@ public class WiFiConnector extends ApplicationAdapter {
 	}
 
 	void startClient(){
+
 		client = new Client();
 		client.start();
 		try {
@@ -202,16 +207,15 @@ public class WiFiConnector extends ApplicationAdapter {
 		kryoClient.register(SampleRequest.class);
 		kryoClient.register(SampleResponse.class);
 
-		SampleRequest request = new SampleRequest();
+		/*SampleRequest request = new SampleRequest();
 		request.text = "запрос";
-		client.sendTCP(request);
+		client.sendTCP(request);*/
 
 		client.addListener(new Listener() {
 			public void received (Connection connection, Object object) {
 				if (object instanceof SampleResponse) {
 					SampleResponse response = (SampleResponse)object;
 					System.out.println(response.text);
-					response.text += 1;
 					receive = response.text;
 				}
 			}
@@ -222,8 +226,10 @@ public class WiFiConnector extends ApplicationAdapter {
 
 class SampleRequest {
 	public String text;
+	public float x, y;
 }
 
 class SampleResponse {
 	public String text;
+	public float x, y;
 }
